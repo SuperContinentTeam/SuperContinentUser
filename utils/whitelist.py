@@ -1,7 +1,7 @@
 import re
 
 RE_WHITELIST = [
-    "/static",
+    f"/health",
 ]
 
 WHITELIST = [re.compile(i) for i in RE_WHITELIST]

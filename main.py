@@ -52,7 +52,7 @@ async def _response(request, call_next):
 # http 拦截器
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
-    if check_whitelist(request.url):
+    if check_whitelist(request.url.path):
         return await _response(request, call_next)
 
     return await _response(request, call_next)
@@ -69,3 +69,8 @@ register_tortoise(
     },
     generate_schemas=True,
 )
+
+
+@app.get("/health")
+async def health():
+    return "Health"
