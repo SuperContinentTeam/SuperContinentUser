@@ -1,7 +1,8 @@
 import re
 
 RE_WHITELIST = [
-    f"/health",
+    r"/health",
+    r"/user/send-code"
 ]
 
 WHITELIST = [re.compile(i) for i in RE_WHITELIST]

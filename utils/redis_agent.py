@@ -9,7 +9,8 @@ class _RedisSession:
             host=Env.REDIS_HOST,
             port=Env.REDIS_PORT,
             decode_responses=True,
-            db=1
+            db=Env.REDIS_SELECT,
+            max_connections=100
         ))
 
 
