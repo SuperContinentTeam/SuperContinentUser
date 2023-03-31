@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY . .
 
+ENV DB_HOST=postgresql
+
 RUN chmod ugo+x start.sh && \
     pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
     pip install -r requirements.txt

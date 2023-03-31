@@ -1,3 +1,5 @@
+import os
+
 from tortoise.models import Model
 from tortoise import fields
 
@@ -14,3 +16,18 @@ class AbstractCreateAtModel(Model):
 
     class Meta:
         abstract = True
+
+
+def try_to_do(func):
+    def inner(*args, **kwargs):
+        try:
+            result = func(*args, **kwargs)
+            return True, result
+        except Exception as e:
+            return False, str(e)
+
+    return inner
+
+
+def random_string(length=6):
+    return os.urandom(length).hex()
