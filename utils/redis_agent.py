@@ -8,6 +8,7 @@ class _RedisSession:
         self.client = redis.Redis(connection_pool=redis.ConnectionPool(
             host=Env.REDIS_HOST,
             port=Env.REDIS_PORT,
+            password=Env.REDIS_PASSWORD,
             decode_responses=True,
             db=Env.REDIS_SELECT,
             max_connections=100

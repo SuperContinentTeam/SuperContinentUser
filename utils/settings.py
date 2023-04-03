@@ -18,11 +18,11 @@ DB_CONF = {
 
 DATABASE = {"default": {"engine": "tortoise.backends.asyncpg", "credentials": DB_CONF}}
 
-DATABASE_MODELS = [
-    f"apps.{a.name}.models"
-    for a in BASE_DIR.joinpath("apps").iterdir()
-    if a.name not in ("__init__.py", "__pycache__")
+APPLICATIONS = [
+    "user"
 ]
+
+DATABASE_MODELS = [f"apps.{a}.models" for a in APPLICATIONS]
 
 TORTOISE_ORM = {
     "connections": {

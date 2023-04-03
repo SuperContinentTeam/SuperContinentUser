@@ -19,4 +19,4 @@ def build_jwt(user: User):
 
 
 def decode_token(token: str, check_expire=True):
-    return jwt.decode(token, Env.SECRET_KEY, algorithms=[Env.ALGORITHM], verify_expiration=check_expire)
+    return jwt.decode(token, Env.SECRET_KEY, algorithms=[Env.ALGORITHM], options={"verify_exp": check_expire})
