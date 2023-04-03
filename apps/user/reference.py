@@ -12,7 +12,7 @@ def send_and_stash_code(email: str):
 
 @try_to_do
 def check_code(email: str, code: str):
-    temp = RedisSession.client.get(f"Code:{email}").decode()
+    temp = RedisSession.client.get(f"Code:{email}")
     return code == temp
 
 

@@ -24,6 +24,7 @@ def try_to_do(func):
             result = func(*args, **kwargs)
             return True, result
         except Exception as e:
+            print(e)
             return False, str(e)
 
     return inner
