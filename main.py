@@ -1,10 +1,13 @@
 import importlib
 
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import ORJSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
+from jwt import PyJWTError
 from tortoise.contrib.fastapi import register_tortoise
 
+from apps.user.interface import decode_token
+from apps.user.models import User
 from utils.settings import *
 from utils.whitelist import check_whitelist
 
@@ -54,6 +57,18 @@ async def _response(request, call_next):
 async def add_process_time_header(request: Request, call_next):
     if check_whitelist(request.url.path):
         return await _response(request, call_next)
+
+    if not (token := request.headers.get("Authorization")):
+        return Response("Token not found", status_code=400)
+
+    token = token.replace("Bearer ", "")
+    try:
+        data = decode_token(token)
+    except PyJWTError:
+        return Response("Invalid token, expired", status_code=400)
+
+    user = await User.filter(entity_id=data["entityId"]).first()
+    request.scope["user"] = user
 
     return await _response(request, call_next)
 

@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from fastapi.requests import Request
 
 from utils.reference import random_string
+from .interface import build_jwt, decode_token
 from .reference import send_and_stash_code, response_result, check_code
 from .models import User
 
@@ -36,3 +37,23 @@ async def register(request: Request):
     await user.save()
 
     return response_result(1, user)
+
+
+@router.post("/login")
+async def login(request: Request):
+    body = await request.json()
+    if not (user := await User.filter(username=body["username"]).first()):
+        return response_result(0, "User not found")
+
+    if not user.check_password(body["password"]):
+        return response_result(0, "Invalid password")
+
+    return response_result(1, build_jwt(user))
+
+
+@router.get("/renew-token")
+async def renew_token(request: Request):
+    token = request.headers["Authorization"].replace("Bearer ", "")
+    data = decode_token(token, check_expire=False)
+    user = await User.get(entity_id=data["entityId"])
+    return response_result(1, build_jwt(user))

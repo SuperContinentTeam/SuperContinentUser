@@ -19,3 +19,7 @@ class Env:
     REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
     REDIS_PORT = os.getenv("REDIS_PORT", 6379)
     REDIS_SELECT = os.getenv("REDIS_SELECT", 0)
+
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    ALGORITHM = os.getenv("ALGORITHM", "HS256")
+    TOKEN_EXPIRE = os.getenv("TOKEN_EXPIRE", 60)  # default: 60 minutes
