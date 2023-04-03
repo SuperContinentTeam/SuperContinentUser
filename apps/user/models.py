@@ -7,6 +7,7 @@ class User(AbstractCreateAtModel):
     entity_id = fields.CharField(max_length=16, unique=True)
     username = fields.CharField(max_length=20, unique=True)
     password = fields.CharField(max_length=255)
+    email = fields.CharField(max_length=128)
 
     def set_password(self, password: str):
         self.password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()

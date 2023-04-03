@@ -14,3 +14,7 @@ def send_and_stash_code(email: str):
 def check_code(email: str, code: str):
     temp = RedisSession.client.get(f"Code:{email}").decode()
     return code == temp
+
+
+def response_result(code, result):
+    return {"code": code, "result": result}
