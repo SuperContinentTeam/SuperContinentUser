@@ -1,18 +1,13 @@
-import redis
+import aioredis
 
 from utils.environments import Env
 
-
-class _RedisSession:
-    def __init__(self):
-        self.client = redis.Redis(connection_pool=redis.ConnectionPool(
-            host=Env.REDIS_HOST,
-            port=Env.REDIS_PORT,
-            password=Env.REDIS_PASSWORD,
-            decode_responses=True,
-            db=Env.REDIS_SELECT,
-            max_connections=100
-        ))
+REDIS_POOL = None
 
 
-RedisSession = _RedisSession()
+async def get_redis_pool():
+    global REDIS_POOL
+    if REDIS_POOL is None:
+        REDIS_POOL = await aioredis.from_url(Env.REDIS_URL, encoding="utf-8", decode_responses=True)
+
+    return REDIS_POOL

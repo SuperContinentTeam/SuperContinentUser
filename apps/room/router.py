@@ -2,7 +2,6 @@ from fastapi import APIRouter, Request
 
 from apps.room.models import Room, RoomUser
 from apps.user.reference import response_result
-from utils.redis_agent import RedisSession
 
 router = APIRouter(prefix="/room")
 

@@ -1,8 +1,5 @@
 import json
 
-from utils.redis_agent import RedisSession
-from utils.reference import random_string
-
 
 class RoomUser:
     def __init__(self, user_entity):
@@ -24,19 +21,13 @@ class RoomUser:
 class Room:
     PRE = "Room"
 
-    def __init__(self, name, user_entity, password=None, limit=20, room_entity=None):
+    def __init__(self, name, user_entity, room_entity, password=None, limit=20):
         self.name = name
         self.user_entity = user_entity  # Room owner
         self.password = password
         self.limit = limit
-        self.room_entity = room_entity or self.generate_entity()
+        self.room_entity = room_entity
         self.user_list = []
-
-    def generate_entity(self):
-        entity_id = random_string(8)
-        while RedisSession.client.exists(f"{self.PRE}:{entity_id}"):
-            entity_id = random_string(8)
-        return entity_id
 
     @property
     def key(self):
@@ -51,16 +42,14 @@ class Room:
             "userList": [user.encode() for user in self.user_list]
         }
 
-    def save(self):
+    async def save(self, redis):
         # default save 3 minutes
         key = self.key
         content = json.dumps(self.to_json(), ensure_ascii=False)
-        RedisSession.client.set(key, content)
+        await redis.client.set(key, content)
 
     @classmethod
-    def get_room(cls, room_entity):
-        key = f"{cls.PRE}:{room_entity}"
-        content = RedisSession.client.get(key)
+    def get_room(cls, room_entity, content):
         if content:
             data = json.loads(content)
             room = Room(
@@ -75,5 +64,5 @@ class Room:
             ]
             return room
 
-    def delete(self):
-        RedisSession.client.delete(self.key)
+    async def delete(self, redis):
+        await redis.client.delete(self.key)

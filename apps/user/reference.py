@@ -1,11 +1,11 @@
-from utils.redis_agent import RedisSession
+# from utils.redis_agent import RedisSession
 from utils.reference import random_string, try_to_do
-from utils.sms import SmsSender
+from adapter.tencent_sms import SmsAdapter
 
 
-def send_and_stash_code(email: str):
+async def send_and_stash_code(email: str):
     code = random_string()
-    SmsSender.send("Verification Email", code, email)
+    SmsAdapter.send_code([email], "Verification", code)
     RedisSession.client.setex(f"Code:{email}", 300, code)
     return code
 
