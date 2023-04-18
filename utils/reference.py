@@ -1,7 +1,9 @@
-import os
+import random
+import string
 
-from tortoise.models import Model
+from fastapi.requests import Request
 from tortoise import fields
+from tortoise.models import Model
 
 
 class AbstractBaseModel(Model):
@@ -30,5 +32,10 @@ def try_to_do(func):
     return inner
 
 
-def random_string(length=6):
-    return os.urandom(length).hex()
+def random_string(length=6, digits=True):
+    chars = string.ascii_letters + (string.digits if digits else "")
+    return "".join(random.sample(chars, length))
+
+
+async def parser_body(request: Request):
+    return await request.json()

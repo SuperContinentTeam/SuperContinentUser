@@ -1,30 +1,37 @@
-from fastapi import APIRouter
+from aioredis import Redis
+from fastapi import APIRouter, Depends
 from fastapi.requests import Request
 
+from adapter.tencent_sms import SmsAdapter
+from utils.redis_agent import get_redis_pool
 from utils.reference import random_string
 from .interface import build_jwt, decode_token
-from .reference import send_and_stash_code, response_result, check_code
 from .models import User
+from .reference import response_result, check_code
 
 router = APIRouter(prefix="/user")
 
 
 @router.post("/send-code")
-async def send_code(request: Request):
+async def send_code(request: Request, redis: Redis = Depends(get_redis_pool)):
     body = await request.json()
-    code = send_and_stash_code(body["recipient"])
+    email = body["recipient"]
+    code = random_string(length=12)
+    await SmsAdapter.send_code([email], "Verification", code)
+    # 缓存300秒
+    await redis.setex(f"Code:{email}", 300, code.encode())
     return code
 
 
 @router.post("/register")
-async def register(request: Request):
+async def register(request: Request, redis: Redis = Depends(get_redis_pool)):
     body = await request.json()
     if await User.filter(username=body["username"]).exists():
         return response_result(2, "This username has been registered")
     if await User.filter(email=body["email"]).exists():
         return response_result(3, "This email has been registered")
 
-    status, result = check_code(body["email"], body["code"])
+    status, result = check_code(body["email"], body["code"], redis)
     if not status or not result:
         return response_result(4, "Verification code has expired")
 

@@ -1,60 +1,79 @@
-from fastapi import APIRouter, Request
+from aioredis import Redis
+from fastapi import APIRouter, Request, Depends
 
+from apps.room.interface import get_users_from_room
 from apps.room.models import Room, RoomUser
 from apps.user.reference import response_result
+from utils.reference import random_string
+from utils.redis_agent import get_redis_pool
 
 router = APIRouter(prefix="/room")
 
 
 @router.get("/list")
-async def room_list():
-    return response_result(1, [
-        Room.get_room(key.split(":")[-1]).to_json()
-        for key in RedisSession.client.scan_iter("Room:*")
-    ])
+async def room_list(redis: Redis = Depends(get_redis_pool)):
+    result = [
+        Room.from_str(key.split(":")[-1], await redis.get(key)).to_json()
+        for key in await redis.scan_iter(f"{Room.PRE}:*")
+    ]
+    return response_result(1, [room.to_json() for room in result])
 
 
 @router.post("/create")
-async def create_room(request: Request):
+async def create_room(request: Request, redis: Redis = Depends(get_redis_pool)):
     body = await request.json()
+
+    room_entity = random_string(16)
+    while await redis.exists(f"{Room.PRE}:{room_entity}"):
+        room_entity = random_string(16)
+
     room = Room(
         name=body["name"],
         limit=body.get("limit", 20),
         password=body.get("password"),
-        user_entity=body["userEntity"]
+        user_entity=body["userEntity"],
+        room_entity=room_entity
     )
-    room.user_list.append(RoomUser(user_entity=body["userEntity"]))
-    room.save()
+    await room.save(redis)
+
     return response_result(1, room.to_json())
 
 
 @router.get("/join/{room_entity}/{user_entity}")
-async def user_join_room(user_entity, room_entity):
-    if not (room := Room.get_room(room_entity)):
+async def user_join_room(user_entity, room_entity, redis: Redis = Depends(get_redis_pool)):
+    if not await redis.exists(room_key := f"{Room.PRE}:{room_entity}"):
         return response_result(0, "Room not found")
 
-    if len(room.user_list) == room.limit:
+    room = Room.from_str(room_entity, await redis.get(room_key))
+
+    user_dict = await get_users_from_room(room_entity, redis)
+
+    if len(user_dict) == room.limit:
         return response_result(0, "Room is full")
 
-    for room_user in room.user_list:
-        if room_user.user_entity == user_entity:
-            return response_result(0, "Already in the room")
+    if user_entity in user_dict:
+        return response_result(0, "Already in the room")
 
-    room.user_list.append(RoomUser(user_entity=user_entity))
-    room.save()
+    await RoomUser(room_entity, user_entity).save(redis)
+
     return response_result(1, "success")
 
 
 @router.get("/leave/{room_entity}/{user_entity}")
-async def user_leave_room(user_entity, room_entity):
-    if not (room := Room.get_room(room_entity)):
+async def user_leave_room(user_entity, room_entity, redis: Redis = Depends(get_redis_pool)):
+    if await redis.exists(f"{Room.PRE}:{room_entity}"):
+        user_dict = await get_users_from_room(room_entity, redis)
+        if room_user := user_dict.get(user_entity):
+            await room_user.delete(redis)
+            del user_dict[room_user]
+
+    return response_result(1, "success")
+
+
+@router.get("/list/{room_entity}")
+async def list_room_user(room_entity, redis: Redis = Depends(get_redis_pool)):
+    if not await redis.exists(f"{Room.PRE}:{room_entity}"):
         return response_result(0, "Room not found")
 
-    temp_list = []
-    for room_user in room.user_list:
-        if room_user.user_entity != user_entity:
-            temp_list.append(room_user)
-
-    room.user_list = temp_list
-    room.save()
-    return response_result(1, "success")
+    user_dict = await get_users_from_room(room_entity, redis)
+    return response_result(1, {user_entity: user.to_json() for user_entity, user in user_dict.items()})

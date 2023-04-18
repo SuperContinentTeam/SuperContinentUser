@@ -2,12 +2,12 @@ import aioredis
 
 from utils.environments import Env
 
-REDIS_POOL = None
+_CACHE = dict()
+_CLIENT = "redis_client"
 
 
 async def get_redis_pool():
-    global REDIS_POOL
-    if REDIS_POOL is None:
-        REDIS_POOL = await aioredis.from_url(Env.REDIS_URL, encoding="utf-8", decode_responses=True)
+    if _CLIENT not in _CACHE:
+        _CACHE[_CLIENT] = await aioredis.from_url(Env.REDIS_URL, encoding="utf-8", decode_responses=True)
 
-    return REDIS_POOL
+    return _CACHE[_CLIENT]
