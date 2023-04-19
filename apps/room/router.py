@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Depends
 
 from apps.room.interface import get_users_from_room
 from apps.room.models import Room, RoomUser
 from apps.user.reference import response_result, parse_body
-from utils.reference import random_string
 from utils.redis_agent import RedisSession
+from utils.reference import random_string
 
 router = APIRouter(prefix="/room")
 
