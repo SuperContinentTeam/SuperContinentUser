@@ -43,7 +43,7 @@ async def user_join_room(user_entity, room_entity):
 
     room = Room.from_str(room_entity, RedisSession.get(room_key))
 
-    user_dict = await get_users_from_room(room_entity, RedisSession)
+    user_dict = await get_users_from_room(room_entity)
 
     if len(user_dict) == room.limit:
         return response_result(0, "Room is full")
@@ -51,7 +51,7 @@ async def user_join_room(user_entity, room_entity):
     if user_entity in user_dict:
         return response_result(0, "Already in the room")
 
-    await RoomUser(room_entity, user_entity).save(RedisSession)
+    await RoomUser(room_entity, user_entity).save()
 
     return response_result(1, "success")
 
@@ -59,7 +59,7 @@ async def user_join_room(user_entity, room_entity):
 @router.get("/leave/{room_entity}/{user_entity}")
 async def user_leave_room(user_entity, room_entity):
     if RedisSession.exists(f"{Room.PRE}:{room_entity}"):
-        user_dict = await get_users_from_room(room_entity, RedisSession)
+        user_dict = await get_users_from_room(room_entity)
         if room_user := user_dict.get(user_entity):
             await room_user.delete(RedisSession)
             del user_dict[room_user]
@@ -72,5 +72,5 @@ async def list_room_user(room_entity):
     if not RedisSession.exists(f"{Room.PRE}:{room_entity}"):
         return response_result(0, "Room not found")
 
-    user_dict = await get_users_from_room(room_entity, RedisSession)
+    user_dict = await get_users_from_room(room_entity)
     return response_result(1, {user_entity: user.to_json() for user_entity, user in user_dict.items()})

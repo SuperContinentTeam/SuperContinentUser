@@ -1,4 +1,5 @@
 import json
+from utils.redis_agent import RedisSession
 
 
 class Room:
@@ -65,15 +66,15 @@ class RoomUser:
         room_entity, user_entity = temp.split("-")
         return RoomUser(room_entity, user_entity)
 
-    async def save(self, redis):
+    async def save(self):
         content = json.dumps(self.to_json(), ensure_ascii=False)
-        redis.set(self.key, content)
+        RedisSession.set(self.key, content)
 
     @staticmethod
-    async def iter(room_entity, redis):
-        for key in redis.scan_iter(f"{RoomUser.PRE}:{room_entity}-*"):
-            content = redis.get(key)
+    async def iter(room_entity):
+        for key in RedisSession.scan_iter(f"{RoomUser.PRE}:{room_entity}-*"):
+            content = RedisSession.get(key)
             yield RoomUser.from_str(key, content)
 
-    async def delete(self, redis):
-        redis.delete(self.key)
+    async def delete(self):
+        RedisSession.delete(self.key)
