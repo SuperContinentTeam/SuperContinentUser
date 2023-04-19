@@ -1,13 +1,12 @@
-import aioredis
+import os
+import redis
 
-from utils.environments import Env
-
-_CACHE = dict()
-_CLIENT = "redis_client"
-
-
-async def get_redis_pool():
-    if _CLIENT not in _CACHE:
-        _CACHE[_CLIENT] = await aioredis.from_url(Env.REDIS_URL, encoding="utf-8", decode_responses=True)
-
-    return _CACHE[_CLIENT]
+RedisSession = redis.Redis(
+    connection_pool=redis.ConnectionPool(
+        host=os.getenv("REDIS_HOST", "localhost"),
+        port=os.getenv("REDIS_PORT", 6379),
+        db=os.getenv("REDIS_DB", 0)
+    ),
+    max_connections=100,
+    decode_responses=True
+)

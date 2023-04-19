@@ -1,7 +1,5 @@
 import json
 
-from aioredis import Redis
-
 
 class Room:
     PRE = "Room"
@@ -25,10 +23,10 @@ class Room:
             "userEntity": self.user_entity
         }
 
-    async def save(self, redis: Redis):
+    async def save(self, redis):
         # default save 3 minutes
         content = json.dumps(self.to_json(), ensure_ascii=False)
-        await redis.setex(self.key, 180, content)
+        redis.setex(self.key, 180, content)
 
     @classmethod
     def from_str(cls, room_entity, content):
@@ -67,15 +65,15 @@ class RoomUser:
         room_entity, user_entity = temp.split("-")
         return RoomUser(room_entity, user_entity)
 
-    async def save(self, redis: Redis):
+    async def save(self, redis):
         content = json.dumps(self.to_json(), ensure_ascii=False)
-        await redis.set(self.key, content)
+        redis.set(self.key, content)
 
     @staticmethod
-    async def iter(room_entity, redis: Redis):
-        for key in await redis.scan_iter(f"{RoomUser.PRE}:{room_entity}-*"):
-            content = await redis.get(key)
+    async def iter(room_entity, redis):
+        for key in redis.scan_iter(f"{RoomUser.PRE}:{room_entity}-*"):
+            content = redis.get(key)
             yield RoomUser.from_str(key, content)
 
-    async def delete(self, redis: Redis):
-        await redis.delete(self.key)
+    async def delete(self, redis):
+        redis.delete(self.key)
