@@ -1,9 +1,15 @@
-import json
-from utils.redis_agent import RedisSession
+class AbstractModel:
+    objects = None
+
+    def save(self):
+        self.objects.save(self)
+
+    def delete(self):
+        self.objects.delete(self)
 
 
-class Room:
-    PRE = "Room"
+class Room(AbstractModel):
+    objects = None
 
     def __init__(self, name, user_entity, room_entity, password=None, limit=20):
         self.name = name
@@ -11,10 +17,6 @@ class Room:
         self.user_entity = user_entity  # Room owner
         self.password = password
         self.limit = limit
-
-    @property
-    def key(self):
-        return f"{self.PRE}:{self.room_entity}"
 
     def to_json(self):
         return {
@@ -24,57 +26,31 @@ class Room:
             "userEntity": self.user_entity
         }
 
-    async def save(self, redis):
-        # default save 3 minutes
-        content = json.dumps(self.to_json(), ensure_ascii=False)
-        redis.setex(self.key, 180, content)
-
-    @classmethod
-    def from_str(cls, room_entity, content):
-        if content:
-            data = json.loads(content)
-            room = Room(
-                name=data["name"],
-                user_entity=data["userEntity"],
-                password=data["password"],
-                limit=data["limit"],
-                room_entity=room_entity
-            )
-            return room
-
-    async def delete(self, redis):
-        await redis.client.delete(self.key)
+    @staticmethod
+    def from_json(pk, data):
+        return Room(data["name"], data["userEntity"], pk, data["password"], data["limit"])
 
 
-class RoomUser:
-    PRE = "RoomUser"
+class RoomUser(AbstractModel):
+    objects = None
 
-    def __init__(self, room_entity, user_entity):
+    def __init__(self, primary_key, room_entity, user_entity):
+        self.pk = primary_key
         self.room_entity = room_entity
         self.user_entity = user_entity
 
     def to_json(self):
-        return {}
-
-    @property
-    def key(self):
-        return f"{self.PRE}:{self.room_entity}-{self.user_entity}"
-
-    @staticmethod
-    def from_str(key: str, content: str):
-        _, temp = key.split(":")
-        room_entity, user_entity = temp.split("-")
-        return RoomUser(room_entity, user_entity)
-
-    async def save(self):
-        content = json.dumps(self.to_json(), ensure_ascii=False)
-        RedisSession.set(self.key, content)
+        return {
+            "roomEntity": self.room_entity,
+            "userEntity": self.user_entity
+        }
 
     @staticmethod
-    async def iter(room_entity):
-        for key in RedisSession.scan_iter(f"{RoomUser.PRE}:{room_entity}-*"):
-            content = RedisSession.get(key)
-            yield RoomUser.from_str(key, content)
+    def from_json(pk, data):
+        return RoomUser(pk, data["roomEntity"], data["userEntity"])
 
-    async def delete(self):
-        RedisSession.delete(self.key)
+    def filter(self, **kwargs):
+        if "room_entity" not in kwargs:
+            return True
+
+        return kwargs["room_entity"] == self.room_entity
