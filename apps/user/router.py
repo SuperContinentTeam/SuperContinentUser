@@ -41,7 +41,7 @@ async def generate_captcha():
 
 
 @router.post("/check-code")
-async def check_code(body=Depends(parse_body)):
+async def check_code_captcha(body=Depends(parse_body)):
     result = RedisSession.getdel(f"VerificationCode:{body['code']}")
 
     if result != body["value"]:

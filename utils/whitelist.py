@@ -4,8 +4,9 @@ RE_WHITELIST = [
     r"/health",
     r"/user/send-code",
     r"/user/register",
-    r"/user/renew-token",
-    r"/user/login"
+    r"/user/login",
+    r"/user/generate-image",
+    r"/user/check-code"
 ]
 
 WHITELIST = [re.compile(i) for i in RE_WHITELIST]

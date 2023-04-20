@@ -38,25 +38,11 @@ for app_name in BASE_DIR.joinpath("apps").iterdir():
             importlib.import_module(f"apps.{name}.signals")
 
 
-async def _response(request, call_next):
-    try:
-        response = await call_next(request)
-    except Exception as e1:
-        response = Response(f"请求失败: {e1}")
-        response.headers.update({
-            "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
-            "access-control-allow-credentials": "true",
-            "access-control-allow-allow-origin": "*"
-        })
-
-    return response
-
-
 # http 拦截器
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
     if check_whitelist(request.url.path):
-        return await _response(request, call_next)
+        return await call_next(request)
 
     if not (token := request.headers.get("Authorization")):
         return Response("Token not found", status_code=400)
@@ -70,7 +56,7 @@ async def add_process_time_header(request: Request, call_next):
     user = await User.filter(entity_id=data["entityId"]).first()
     request.scope["user"] = user
 
-    return await _response(request, call_next)
+    return await call_next(request)
 
 
 # 所有应用的model注册到数据库
