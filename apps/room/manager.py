@@ -1,16 +1,22 @@
 import orjson
 
 from utils.redis_agent import RedisSession
-from .models import Room, RoomUser
 
 
-class AbstractManager:
+class Manager:
     session = RedisSession
-    model = None
+    __instance = dict()
 
-    @property
-    def pre(self):
-        return self.model.__name__
+    def __new__(cls, model):
+        name = model.__name__
+        if name not in cls.__instance:
+            cls.__instance[name] = object.__new__(cls)
+
+        return cls.__instance[name]
+
+    def __init__(self, model):
+        self.model = model
+        self.pre = model.__name__
 
     def get(self, pk, to_object=True):
         if content := self.session.get(f"{self.pre}:{pk}"):
@@ -25,12 +31,17 @@ class AbstractManager:
         self.session.set(f"{self.pre}:{item.pk}", content)
 
     def delete(self, item):
-        self.session.delete(f"{self.pre}:{item.pk}")
+        if isinstance(item, str):
+            key = item
+        else:
+            key = item.pk
+
+        self.session.delete(f"{self.pre}:{key}")
 
     def all(self, to_object=True):
         for key in self.session.scan_iter(f"{self.pre}:*"):
-            _, pk = key.split(":")
-            yield self.get(pk, to_object)
+            _, *pk = key.split(":")
+            yield self.get(":".join(pk), to_object)
 
     def filter(self, **kwargs):
         for item in self.all():
@@ -42,15 +53,3 @@ class AbstractManager:
 
     def has(self, pk):
         return self.session.exists(f"{self.pre}:{pk}")
-
-
-class RoomManager(AbstractManager):
-    model = Room
-
-
-class RoomUserManager(AbstractManager):
-    model = RoomUser
-
-
-Room.objects = RoomManager()
-RoomUser.objects = RoomUserManager()

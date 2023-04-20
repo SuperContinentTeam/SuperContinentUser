@@ -1,19 +1,7 @@
-class AbstractModel:
-    objects = None
-
-    def save(self):
-        self.objects.save(self)
-
-    def delete(self):
-        self.objects.delete(self)
-
-
-class Room(AbstractModel):
-    objects = None
-
+class Room:
     def __init__(self, name, user_entity, room_entity, password=None, limit=20):
         self.name = name
-        self.room_entity = room_entity
+        self.pk = room_entity
         self.user_entity = user_entity  # Room owner
         self.password = password
         self.limit = limit
@@ -31,11 +19,11 @@ class Room(AbstractModel):
         return Room(data["name"], data["userEntity"], pk, data["password"], data["limit"])
 
 
-class RoomUser(AbstractModel):
+class RoomUser:
     objects = None
 
-    def __init__(self, primary_key, room_entity, user_entity):
-        self.pk = primary_key
+    def __init__(self, room_entity, user_entity):
+        self.pk = f"{room_entity}:{user_entity}"
         self.room_entity = room_entity
         self.user_entity = user_entity
 
@@ -47,7 +35,7 @@ class RoomUser(AbstractModel):
 
     @staticmethod
     def from_json(pk, data):
-        return RoomUser(pk, data["roomEntity"], data["userEntity"])
+        return RoomUser(data["roomEntity"], data["userEntity"])
 
     def filter(self, **kwargs):
         if "room_entity" not in kwargs:

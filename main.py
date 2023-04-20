@@ -41,7 +41,7 @@ for app_name in BASE_DIR.joinpath("apps").iterdir():
 # http 拦截器
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
-    if check_whitelist(request.url.path):
+    if Env.DEBUG or check_whitelist(request.url.path):
         return await call_next(request)
 
     if not (token := request.headers.get("Authorization")):

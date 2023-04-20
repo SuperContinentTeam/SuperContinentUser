@@ -7,6 +7,8 @@ dotenv.load_dotenv()
 
 
 class Env:
+    DEBUG = os.getenv("DEBUG", "TRUE") == "TRUE"
+
     DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
     DB_PORT = os.getenv("DB_PORT", 5432)
 
