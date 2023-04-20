@@ -1,3 +1,10 @@
+import base64
+import datetime
+import io
+import random
+import string
+
+from captcha.image import ImageCaptcha
 from fastapi import APIRouter, Depends
 from fastapi.requests import Request
 
@@ -9,6 +16,38 @@ from .models import User
 from .reference import response_result, check_code, parse_body
 
 router = APIRouter(prefix="/user")
+image_captcha = ImageCaptcha()
+
+
+@router.get("/generate-image")
+async def generate_captcha():
+    code = "".join(random.sample(string.digits, 7))
+    image = image_captcha.generate_image(code)
+
+    # 将图片转换为Base64编码
+    buffered = io.BytesIO()
+    image.save(buffered, format="PNG")
+    img_base64 = base64.b64encode(buffered.getvalue()).decode()
+
+    name = random_string(7)
+
+    # 将验证码的结果缓存起来
+    RedisSession.setex(f"VerificationCode:{name}", datetime.timedelta(hours=1), code)
+
+    return response_result(1, {
+        "code": name,
+        "image": img_base64
+    })
+
+
+@router.post("/check-code")
+async def check_code(body=Depends(parse_body)):
+    result = RedisSession.getdel(f"VerificationCode:{body['code']}")
+
+    if result != body["value"]:
+        return response_result(0, "验证吗失效或错误")
+
+    return response_result(1, "success")
 
 
 @router.post("/send-code")
