@@ -22,6 +22,6 @@ class Env:
     TENCENT_SECRET_ID = os.getenv("TENCENT_SECRET_ID")
     TENCENT_SECRET_KEY = os.getenv("TENCENT_SECRET_KEY")
 
-    FROM_ADDRESS = "administrator@email.55ca.xyz"
-    TEMPLATE_ID = 75237
-    TEMPLATE_ARG = "code"
+    FROM_ADDRESS = os.getenv("SMS_SENDER")
+    TEMPLATE_ID = os.getenv("SMS_TEMPLATE_ID")
+    TEMPLATE_ARG = os.getenv("SMS_TEMPLATE_ARG")
